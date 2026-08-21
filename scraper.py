@@ -20,326 +20,6 @@ HEADERS = {
     "Referer": "https://loterias.conectate.com.do/"
 }
 
-KNOWN_CONECTATE_GAMES = {
-    "6966a6d1ea7015c3b8a3d44d": {
-        "title": "Loto - Loto Más",
-        "company": "Lotería Dominicana"
-    },
-    "6966a6d1ea7015c3b8a3d453": {
-        "title": "Quiniela Leidsa",
-        "company": "Leidsa"
-    },
-    "6966a6d1ea7015c3b8a3d459": {
-        "title": "Super Kino TV",
-        "company": "Leidsa"
-    },
-    "6966a6d1ea7015c3b8a3d45f": {
-        "title": "Loto Pool",
-        "company": "Leidsa"
-    },
-    "6966a6d1ea7015c3b8a3d465": {
-        "title": "Super Palé",
-        "company": "Lotería Dominicana"
-    },
-    "6966a6d1ea7015c3b8a3d471": {
-        "title": "Pega 3 Más",
-        "company": "Leidsa"
-    },
-    "6966a6d1ea7015c3b8a3d47c": {
-        "title": "Lotería Nacional",
-        "company": "Nacional"
-    },
-    "6966a6d1ea7015c3b8a3d482": {
-        "title": "Gana Más",
-        "company": "Nacional"
-    },
-    "6966a6d2ea7015c3b8a3d488": {
-        "title": "Billetes Domingo",
-        "company": "Nacional"
-    },
-    "6966a6d2ea7015c3b8a3d48e": {
-        "title": "Juega + Pega +",
-        "company": "Nacional"
-    },
-    "6966a6d2ea7015c3b8a3d4a8": {
-        "title": "Loto Real",
-        "company": "Real"
-    },
-    "6966a6d2ea7015c3b8a3d4ae": {
-        "title": "Quiniela Real",
-        "company": "Real"
-    },
-    "6966a6d2ea7015c3b8a3d4b4": {
-        "title": "Super Palé",
-        "company": "Lotería Dominicana"
-    },
-    "6966a6d2ea7015c3b8a3d4ba": {
-        "title": "Tu Fecha Real",
-        "company": "Real"
-    },
-    "6966a6d2ea7015c3b8a3d4c0": {
-        "title": "Pega 4 Real",
-        "company": "Real"
-    },
-    "6966a6d2ea7015c3b8a3d4c6": {
-        "title": "Loto Pool",
-        "company": "Leidsa"
-    },
-    "6966a6d2ea7015c3b8a3d4cc": {
-        "title": "Nueva Yol Real",
-        "company": "Real"
-    },
-    "69fd98465e76585b602695be": {
-        "title": "Chance Real",
-        "company": "Real"
-    },
-    "69fd98465e76585b602695c5": {
-        "title": "Repartidera Real",
-        "company": "Real"
-    },
-    "69fd98465e76585b602695cc": {
-        "title": "Loto Pool Noche",
-        "company": "Leidsa"
-    },
-    "6966a6d2ea7015c3b8a3d4d7": {
-        "title": "Quiniela Loteka",
-        "company": "Loteka"
-    },
-    "6966a6d2ea7015c3b8a3d4dd": {
-        "title": "Mega Chances",
-        "company": "Loteka"
-    },
-    "6966a6d2ea7015c3b8a3d4e6": {
-        "title": "MegaLotto",
-        "company": "Lotería Dominicana"
-    },
-    "6966a6d2ea7015c3b8a3d4ec": {
-        "title": "Mega Chances Repartidera",
-        "company": "Loteka"
-    },
-    "6966a6d2ea7015c3b8a3d4f2": {
-        "title": "Toca 3",
-        "company": "Loteka"
-    },
-    "6966a6d2ea7015c3b8a3d4fd": {
-        "title": "Mega Millions",
-        "company": "Americanas"
-    },
-    "6966a6d2ea7015c3b8a3d503": {
-        "title": "PowerBall",
-        "company": "Americanas"
-    },
-    "6966a6d2ea7015c3b8a3d509": {
-        "title": "New York Tarde",
-        "company": "Americanas"
-    },
-    "6966a6d2ea7015c3b8a3d50f": {
-        "title": "New York Noche",
-        "company": "Americanas"
-    },
-    "6966a6d2ea7015c3b8a3d515": {
-        "title": "Florida Día",
-        "company": "Americanas"
-    },
-    "6966a6d2ea7015c3b8a3d51b": {
-        "title": "Florida Noche",
-        "company": "Americanas"
-    },
-    "6966a6d2ea7015c3b8a3d521": {
-        "title": "Cash 4 Life",
-        "company": "Lotería Dominicana"
-    },
-    "6966a6d2ea7015c3b8a3d527": {
-        "title": "Powerball Double Play",
-        "company": "Americanas"
-    },
-    "6966a6d2ea7015c3b8a3d5c0": {
-        "title": "La Primera Día",
-        "company": "Primera"
-    },
-    "6966a6d2ea7015c3b8a3d5c6": {
-        "title": "Primera Noche",
-        "company": "Primera"
-    },
-    "6966a6d2ea7015c3b8a3d5cc": {
-        "title": "Loto 5",
-        "company": "Primera"
-    },
-    "6966a6d2ea7015c3b8a3d5d2": {
-        "title": "El Quinielón Día",
-        "company": "Primera"
-    },
-    "6966a6d2ea7015c3b8a3d5d8": {
-        "title": "Quinielón Noche",
-        "company": "Primera"
-    },
-    "6966a6d3ea7015c3b8a3d5e3": {
-        "title": "La Suerte Día",
-        "company": "La Suerte"
-    },
-    "6966a6d3ea7015c3b8a3d5e9": {
-        "title": "La Suerte Tarde",
-        "company": "La Suerte"
-    },
-    "6966a6d3ea7015c3b8a3d5f4": {
-        "title": "LoteDom",
-        "company": "LoteDom"
-    },
-    "6966a6d3ea7015c3b8a3d5fa": {
-        "title": "El Quemaito Mayor",
-        "company": "LoteDom"
-    },
-    "6966a6d3ea7015c3b8a3d600": {
-        "title": "Super Palé",
-        "company": "Lotería Dominicana"
-    },
-    "6966a6d3ea7015c3b8a3d606": {
-        "title": "Agarra 4",
-        "company": "LoteDom"
-    },
-    "6966a6d3ea7015c3b8a3d611": {
-        "title": "Anguila 1:00 PM",
-        "company": "Anguila"
-    },
-    "6966a6d3ea7015c3b8a3d617": {
-        "title": "Anguila 6:00 PM",
-        "company": "Anguila"
-    },
-    "6966a6d3ea7015c3b8a3d61d": {
-        "title": "Anguila 9:00 PM",
-        "company": "Anguila"
-    },
-    "6966a6d3ea7015c3b8a3d635": {
-        "title": "Anguila 10:00 AM",
-        "company": "Anguila"
-    },
-    "6a5114d907d516b9c5101dd5": {
-        "title": "Anguila 8:00  AM",
-        "company": "Anguila"
-    },
-    "6a3e91bd5036a431f5f3e801": {
-        "title": "Anguila 9:00 AM",
-        "company": "Anguila"
-    },
-    "6966a6d3ea7015c3b8a3d63b": {
-        "title": "La Cuarteta 10:00 AM",
-        "company": "Anguila"
-    },
-    "6a3e935d5036a431f5f3e8b2": {
-        "title": "Anguila 11:00 AM",
-        "company": "Anguila"
-    },
-    "6a3e94f85036a431f5f407b0": {
-        "title": "Anguila 12:00 PM",
-        "company": "Anguila"
-    },
-    "6966a6d3ea7015c3b8a3d623": {
-        "title": "La Cuarteta 1:00 PM",
-        "company": "Anguila"
-    },
-    "6a3e96e25036a431f5f40c87": {
-        "title": "Anguila 2:00 PM",
-        "company": "Anguila"
-    },
-    "6a3e97a25036a431f5f41eef": {
-        "title": "Anguila 3:00 PM",
-        "company": "Anguila"
-    },
-    "6a5116a607d516b9c5102db7": {
-        "title": "Anguila 4:00 PM",
-        "company": "Anguila"
-    },
-    "6a5116f607d516b9c510302f": {
-        "title": "Anguila 5:00 PM",
-        "company": "Anguila"
-    },
-    "6966a6d3ea7015c3b8a3d629": {
-        "title": "La Cuarteta 6:00 PM",
-        "company": "Anguila"
-    },
-    "6a51185b07d516b9c5104c69": {
-        "title": "Anguila 7:00 PM",
-        "company": "Anguila"
-    },
-    "6966a6d3ea7015c3b8a3d62f": {
-        "title": "La Cuarteta 9:00 PM",
-        "company": "Anguila"
-    },
-    "6a511ab407d516b9c510788d": {
-        "title": "Anguila 8:00 PM",
-        "company": "Anguila"
-    },
-    "6a511b0a07d516b9c5107d05": {
-        "title": "Anguila 10:00 PM",
-        "company": "Anguila"
-    },
-    "6966a6d3ea7015c3b8a3d646": {
-        "title": "Loto Pool Día",
-        "company": "Leidsa"
-    },
-    "6966a6d3ea7015c3b8a3d64c": {
-        "title": "Loto Pool Noche",
-        "company": "Leidsa"
-    },
-    "6966a6d3ea7015c3b8a3d652": {
-        "title": "Pick 3 Día",
-        "company": "King Lottery"
-    },
-    "6966a6d3ea7015c3b8a3d658": {
-        "title": "Pick 3 Noche",
-        "company": "King Lottery"
-    },
-    "6966a6d3ea7015c3b8a3d65e": {
-        "title": "Pick 4 Día",
-        "company": "King Lottery"
-    },
-    "6966a6d3ea7015c3b8a3d664": {
-        "title": "Pick 4 Noche",
-        "company": "King Lottery"
-    },
-    "6966a6d3ea7015c3b8a3d66a": {
-        "title": "King Lottery Día",
-        "company": "King Lottery"
-    },
-    "6966a6d3ea7015c3b8a3d670": {
-        "title": "King Lottery Noche",
-        "company": "King Lottery"
-    },
-    "6966a6d3ea7015c3b8a3d676": {
-        "title": "Philipsburg Día",
-        "company": "King Lottery"
-    },
-    "6966a6d3ea7015c3b8a3d67c": {
-        "title": "Philipsburg Noche",
-        "company": "King Lottery"
-    },
-    "6a4411b07f178816db959f3d": {
-        "title": "Haiti Bolet 9:30 AM",
-        "company": "Haiti Bolet"
-    },
-    "6a44125c7f178816db95a378": {
-        "title": "Haiti Bolet 10:30 AM",
-        "company": "Haiti Bolet"
-    },
-    "6a4414807f178816db95ac68": {
-        "title": "Haiti Bolet 11:30 AM",
-        "company": "Haiti Bolet"
-    },
-    "6a4414ae7f178816db95ac7e": {
-        "title": "Haiti Bolet 5:30 PM",
-        "company": "Haiti Bolet"
-    },
-    "6a4414d17f178816db95aca1": {
-        "title": "Haiti Bolet 6:30 PM",
-        "company": "Haiti Bolet"
-    },
-    "6a4414fc7f178816db95acb7": {
-        "title": "Haiti Bolet 7:30 PM",
-        "company": "Haiti Bolet"
-    }
-}
-
-
 def format_lottery_item(item: Dict[str, Any]) -> Dict[str, Any]:
     """
     Format a lottery result item to be easily consumable by Android apps (Retrofit/Gson/Moshi/Kotlin).
@@ -402,7 +82,7 @@ class LotteryScraper:
                     elif isinstance(obj, list):
                         return [deref(v, depth + 1) for v in obj]
                     return obj
-
+        
                 company_map = {}
                 for item in payload:
                     if isinstance(item, dict) and item.get("siteGames") and item.get("title"):
@@ -413,7 +93,7 @@ class LotteryScraper:
                             company_map[cid] = title
 
                 game_map = {}
-                for item in payload:
+                for item in payload: 
                     if isinstance(item, dict):
                         d_item = deref(item)
                         # Grab any ID: game_id (primary), _id (company page objects), migration_game_id (legacy mapping)
@@ -498,22 +178,9 @@ class LotteryScraper:
                                     nums.append(sub.strip())
                                     
                             meta = catalog.get(gid, {})
-                            title = meta.get("title")
-                            company = meta.get("company")
-                            
-                            # Fallback to KNOWN_CONECTATE_GAMES if catalog entry is missing or invalid
-                            if not title or title.startswith("Sorteo "):
-                                known_info = KNOWN_CONECTATE_GAMES.get(str(gid), {})
-                                title = known_info.get("title", title or f"Sorteo {gid}")
-                                if not company or company == "Lotería Dominicana":
-                                    company = known_info.get("company", "Lotería Dominicana")
-                            
-                            if not company:
-                                company = "Lotería Dominicana"
-                                
-                            slug = meta.get("slug")
-                            if not slug or slug.startswith("sorteo-"):
-                                slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+                            title = meta.get("title", f"Sorteo {gid}")
+                            slug = meta.get("slug", title.lower().replace(" ", "-"))
+                            company = meta.get("company", "Lotería Dominicana")
                             
                             raw_date = last_s.get("date", "")
                             formatted_date = raw_date[:10] if len(raw_date) >= 10 else raw_date
@@ -650,21 +317,9 @@ class LotteryScraper:
                                     nums.append(sub.strip())
                                     
                             meta = catalog.get(gid, {})
-                            title = meta.get("title")
-                            company = meta.get("company")
-                            
-                            if not title or title.startswith("Sorteo "):
-                                known_info = KNOWN_CONECTATE_GAMES.get(str(gid), {})
-                                title = known_info.get("title", title or f"Sorteo {gid}")
-                                if not company or company == "Lotería Dominicana":
-                                    company = known_info.get("company", "Lotería Dominicana")
-                            
-                            if not company:
-                                company = "Lotería Dominicana"
-                                
-                            slug = meta.get("slug")
-                            if not slug or slug.startswith("sorteo-"):
-                                slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+                            title = meta.get("title", f"Sorteo {gid}")
+                            slug = meta.get("slug", title.lower().replace(" ", "-"))
+                            company = meta.get("company", "Lotería Dominicana")
                             
                             formatted_list.append(format_lottery_item({
                                 "id": gid,
