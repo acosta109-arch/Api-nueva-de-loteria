@@ -94,24 +94,40 @@ class LotteryScraper:
 
                 game_map = {}
                 for item in payload:
-                    if isinstance(item, dict) and item.get("game_id") and item.get("title"):
+                    if isinstance(item, dict):
                         d_item = deref(item)
-                        gid = d_item.get("game_id")
-                        title = d_item.get("title", "")
+                        # Grab any ID: game_id (primary), _id (company page objects), migration_game_id (legacy mapping)
+                        ids_to_map = []
+                        g_id = d_item.get("game_id") or d_item.get("_id")
+                        mig_id = d_item.get("migration_game_id")
+                        if g_id:
+                            ids_to_map.append(g_id)
+                        if mig_id and mig_id not in ids_to_map:
+                            ids_to_map.append(mig_id)
+
+                        # Only proceed if item has a human-readable title
+                        title = d_item.get("title") or d_item.get("mobile_title") or d_item.get("name")
+                        if not ids_to_map or not title or not isinstance(title, str):
+                            continue
+
                         slug = d_item.get("seo", {}).get("url") if isinstance(d_item.get("seo"), dict) else d_item.get("url", "")
                         if not slug:
                             slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
-                        
+
                         scid = d_item.get("site_company_id") or d_item.get("company_id")
                         company = company_map.get(scid, "Lotería Dominicana")
-                        
-                        game_map[gid] = {
-                            "game_id": gid,
+
+                        game_info = {
+                            "game_id": ids_to_map[0],
                             "title": title,
                             "slug": slug,
                             "company": company
                         }
-                        
+                        for gid in ids_to_map:
+                            # Don't overwrite an entry that already has a specific game_id match
+                            if gid not in game_map:
+                                game_map[gid] = game_info
+
                 self.catalog_cache = game_map
                 self.company_cache = company_map
                 return game_map
