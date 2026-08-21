@@ -1,6 +1,6 @@
 """
 Dominican Republic Lotteries Web Scraper & API Engine
-Target source: https://loterias.conectate.com.do/
+Target source: https://loteriasdominicanas.com/
 """
 
 import httpx
@@ -9,15 +9,16 @@ from typing import List, Dict, Any, Optional
 import datetime
 import re
 
+LOTERIASDOMINICANAS_SITE_URL = "https://loteriasdominicanas.com/_site.json"
+LOTERIASDOMINICANAS_BASE_URL = "https://loteriasdominicanas.com/"
 CONECTATE_API_ENDPOINT = "https://api.conectate.com.do/conectate/sessions"
-CONECTATE_PAYLOAD_URL = "https://loterias.conectate.com.do/_payload.json"
-CONECTATE_BASE_URL = "https://loterias.conectate.com.do/"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
-    "Origin": "https://loterias.conectate.com.do",
-    "Referer": "https://loterias.conectate.com.do/"
+    "Origin": "https://loteriasdominicanas.com",
+    "Referer": "https://loteriasdominicanas.com/",
+    "Site-Env": "dominicana"
 }
 
 def format_lottery_item(item: Dict[str, Any]) -> Dict[str, Any]:
@@ -50,95 +51,69 @@ def format_lottery_item(item: Dict[str, Any]) -> Dict[str, Any]:
         "segundo": segundo,
         "tercero": tercero,
         "extra": item.get("extra", {}),
-        "fuente": item.get("fuente", "loterias.conectate.com.do")
+        "fuente": item.get("fuente", "loteriasdominicanas.com")
     }
 
 class LotteryScraper:
     def __init__(self, timeout: float = 12.0):
         self.timeout = timeout
         self.catalog_cache: Optional[Dict[str, Dict[str, Any]]] = None
-        self.company_cache: Optional[Dict[str, str]] = None
 
     async def _fetch_catalog(self, client: httpx.AsyncClient) -> Dict[str, Dict[str, Any]]:
-        """Fetch game metadata & mapping from loterias.conectate.com.do _payload.json"""
+        """
+        Fetch game catalog & metadata directly from https://loteriasdominicanas.com/_site.json
+        """
         if self.catalog_cache and len(self.catalog_cache) > 0:
             return self.catalog_cache
-            
+
+        game_map = {}
         try:
-            resp = await client.get(CONECTATE_PAYLOAD_URL, headers=HEADERS)
+            resp = await client.get(LOTERIASDOMINICANAS_SITE_URL, headers=HEADERS)
             if resp.status_code == 200:
-                payload = resp.json()
-                
-                def deref(obj, depth=0):
-                    if depth > 6:
-                        return str(obj)
-                    if isinstance(obj, int) and 0 <= obj < len(payload):
-                        val = payload[obj]
-                        if isinstance(val, (dict, list)):
-                            return deref(val, depth + 1)
-                        return val
-                    elif isinstance(obj, dict):
-                        return {k: deref(v, depth + 1) for k, v in obj.items()}
-                    elif isinstance(obj, list):
-                        return [deref(v, depth + 1) for v in obj]
-                    return obj
-        
-                company_map = {}
-                for item in payload:
-                    if isinstance(item, dict) and item.get("siteGames") and item.get("title"):
-                        d_item = deref(item)
-                        cid = d_item.get("_id")
-                        title = d_item.get("title")
-                        if cid and title:
-                            company_map[cid] = title
+                data = resp.json()
+                for company in data.get("siteCompanies", []):
+                    c_name = company.get("title", "Lotería Dominicana")
+                    for game in company.get("siteGames", []):
+                        g_title = game.get("title") or game.get("name")
+                        seo_url = game.get("seo", {}).get("url") if isinstance(game.get("seo"), dict) else game.get("url", "")
+                        
+                        if not seo_url and g_title:
+                            seo_url = re.sub(r'[^a-z0-9]+', '-', g_title.lower()).strip('-')
 
-                game_map = {}
-                for item in payload: 
-                    if isinstance(item, dict):
-                        d_item = deref(item)
-                        # Grab any ID: game_id (primary), _id (company page objects), migration_game_id (legacy mapping)
-                        ids_to_map = []
-                        g_id = d_item.get("game_id") or d_item.get("_id")
-                        mig_id = d_item.get("migration_game_id")
-                        if g_id:
-                            ids_to_map.append(g_id)
-                        if mig_id and mig_id not in ids_to_map:
-                            ids_to_map.append(mig_id)
-
-                        # Only proceed if item has a human-readable title
-                        title = d_item.get("title") or d_item.get("mobile_title") or d_item.get("name")
-                        if not ids_to_map or not title or not isinstance(title, str):
-                            continue
-
-                        slug = d_item.get("seo", {}).get("url") if isinstance(d_item.get("seo"), dict) else d_item.get("url", "")
-                        if not slug:
-                            slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
-
-                        scid = d_item.get("site_company_id") or d_item.get("company_id")
-                        company = company_map.get(scid, "Lotería Dominicana")
+                        ids = set()
+                        for key in ["game_id", "_id", "migration_game_id", "id"]:
+                            v = game.get(key)
+                            if v:
+                                ids.add(str(v))
+                        
+                        if isinstance(game.get("game"), dict):
+                            g_obj = game["game"]
+                            for key in ["_id", "game_id", "migration_game_id"]:
+                                v = g_obj.get(key)
+                                if v:
+                                    ids.add(str(v))
 
                         game_info = {
-                            "game_id": ids_to_map[0],
-                            "title": title,
-                            "slug": slug,
-                            "company": company
+                            "game_id": list(ids)[0] if ids else "",
+                            "title": g_title or "Sorteo",
+                            "slug": seo_url,
+                            "company": c_name
                         }
-                        for gid in ids_to_map:
-                            # Don't overwrite an entry that already has a specific game_id match
+
+                        for gid in ids:
                             if gid not in game_map:
                                 game_map[gid] = game_info
 
                 self.catalog_cache = game_map
-                self.company_cache = company_map
                 return game_map
         except Exception as e:
-            print(f"[Scraper Warning] Error fetching catalog payload: {e}")
-            
+            print(f"[Scraper Warning] Error fetching catalog from loteriasdominicanas.com: {e}")
+
         return {}
 
     async def get_latest_results(self) -> Dict[str, Any]:
         """
-        Fetch latest winning numbers for all Dominican lotteries from loterias.conectate.com.do.
+        Fetch latest winning numbers for all Dominican lotteries from loteriasdominicanas.com.
         """
         try:
             async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
@@ -151,18 +126,18 @@ class LotteryScraper:
                 url = f"{CONECTATE_API_ENDPOINT}?date={date_iso}"
                 resp = await client.get(url, headers=HEADERS)
                 
-                # If today has no results yet, fallback to yesterday's date
+                # Fallback to yesterday if today is empty
                 if resp.status_code == 200 and not resp.json():
                     yesterday = now - datetime.timedelta(days=1)
                     date_iso = yesterday.strftime("%Y-%m-%dT04:00:00.000Z")
                     url = f"{CONECTATE_API_ENDPOINT}?date={date_iso}"
                     resp = await client.get(url, headers=HEADERS)
-                    
+
                 if resp.status_code == 200:
                     raw_data = resp.json()
                     formatted_list = []
                     for entry in raw_data:
-                        gid = entry.get("game_id")
+                        gid = str(entry.get("game_id", ""))
                         sessions = entry.get("sessions", [])
                         if sessions:
                             last_s = sessions[0]
@@ -179,7 +154,10 @@ class LotteryScraper:
                                     
                             meta = catalog.get(gid, {})
                             title = meta.get("title", f"Sorteo {gid}")
-                            slug = meta.get("slug", title.lower().replace(" ", "-"))
+                            slug = meta.get("slug")
+                            if not slug:
+                                slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+                                
                             company = meta.get("company", "Lotería Dominicana")
                             
                             raw_date = last_s.get("date", "")
@@ -197,13 +175,13 @@ class LotteryScraper:
                                     "session_id": last_s.get("_id"),
                                     "createdAt": last_s.get("createdAt")
                                 },
-                                "fuente": "loterias.conectate.com.do"
+                                "fuente": "loteriasdominicanas.com"
                             }))
                             
                     if formatted_list:
                         return {
                             "status": "success",
-                            "source": "loterias.conectate.com.do",
+                            "source": "loteriasdominicanas.com",
                             "count": len(formatted_list),
                             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                             "data": formatted_list
@@ -215,7 +193,7 @@ class LotteryScraper:
 
     async def get_sorteos_catalog(self) -> Dict[str, Any]:
         """
-        Fetch complete list of supported draws and companies from loterias.conectate.com.do.
+        Fetch complete list of supported draws and companies from loteriasdominicanas.com.
         """
         try:
             async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
@@ -232,29 +210,17 @@ class LotteryScraper:
                     ]
                     return {
                         "status": "success",
-                        "source": "loterias.conectate.com.do",
+                        "source": "loteriasdominicanas.com",
                         "count": len(data_list),
                         "data": data_list
                     }
         except Exception as e:
             print(f"[Scraper Warning] Sorteos catalog fetch failed: {e}")
 
-        default_sorteos = [
-            {"sorteo_slug": "gana-mas", "sorteo_nombre": "Gana Más", "compania": "Nacional", "hora": "14:30"},
-            {"sorteo_slug": "quiniela-nacional", "sorteo_nombre": "Lotería Nacional Noche", "compania": "Nacional", "hora": "21:00"},
-            {"sorteo_slug": "quiniela-pale", "sorteo_nombre": "Quiniela Leidsa", "compania": "Leidsa", "hora": "20:55"},
-            {"sorteo_slug": "loto-mas", "sorteo_nombre": "Loto Leidsa", "compania": "Leidsa", "hora": "20:55"},
-            {"sorteo_slug": "quiniela-loteka", "sorteo_nombre": "Quiniela Loteka", "compania": "Loteka", "hora": "19:55"},
-            {"sorteo_slug": "la-primera-dia", "sorteo_nombre": "La Primera Día", "compania": "Primera", "hora": "12:00"},
-            {"sorteo_slug": "quiniela-real", "sorteo_nombre": "Quiniela Real", "compania": "Real", "hora": "12:55"},
-            {"sorteo_slug": "new-york-tarde", "sorteo_nombre": "New York Tarde", "compania": "Americanas", "hora": "14:30"},
-            {"sorteo_slug": "new-york-noche", "sorteo_nombre": "New York Noche", "compania": "Americanas", "hora": "22:30"}
-        ]
         return {
-            "status": "success",
-            "source": "fallback_catalog",
-            "count": len(default_sorteos),
-            "data": default_sorteos
+            "status": "error",
+            "message": "Could not retrieve sorteos catalog",
+            "data": []
         }
 
     async def get_sorteo_detail(self, slug: str) -> Dict[str, Any]:
@@ -270,7 +236,7 @@ class LotteryScraper:
             if filtered:
                 return {
                     "status": "success",
-                    "source": "loterias.conectate.com.do",
+                    "source": "loteriasdominicanas.com",
                     "slug": slug,
                     "count": len(filtered),
                     "data": filtered
@@ -290,7 +256,6 @@ class LotteryScraper:
             async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
                 catalog = await self._fetch_catalog(client)
                 
-                # Format to ISO date-time required by Conectate API
                 clean_date = date_str.strip()[:10]
                 date_iso = f"{clean_date}T04:00:00.000Z"
                 
@@ -301,7 +266,7 @@ class LotteryScraper:
                     raw_data = resp.json()
                     formatted_list = []
                     for entry in raw_data:
-                        gid = entry.get("game_id")
+                        gid = str(entry.get("game_id", ""))
                         sessions = entry.get("sessions", [])
                         if sessions:
                             last_s = sessions[0]
@@ -318,7 +283,10 @@ class LotteryScraper:
                                     
                             meta = catalog.get(gid, {})
                             title = meta.get("title", f"Sorteo {gid}")
-                            slug = meta.get("slug", title.lower().replace(" ", "-"))
+                            slug = meta.get("slug")
+                            if not slug:
+                                slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+                                
                             company = meta.get("company", "Lotería Dominicana")
                             
                             formatted_list.append(format_lottery_item({
@@ -333,12 +301,12 @@ class LotteryScraper:
                                     "session_id": last_s.get("_id"),
                                     "createdAt": last_s.get("createdAt")
                                 },
-                                "fuente": "loterias.conectate.com.do"
+                                "fuente": "loteriasdominicanas.com"
                             }))
                             
                     return {
                         "status": "success",
-                        "source": "loterias.conectate.com.do",
+                        "source": "loteriasdominicanas.com",
                         "fecha": clean_date,
                         "count": len(formatted_list),
                         "data": formatted_list
@@ -354,15 +322,14 @@ class LotteryScraper:
 
     async def _scrape_fallback_latest(self) -> Dict[str, Any]:
         """
-        HTML scraper fallback for loterias.conectate.com.do.
+        HTML scraper fallback for loteriasdominicanas.com.
         """
         try:
             async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-                resp = await client.get(CONECTATE_BASE_URL, headers=HEADERS)
+                resp = await client.get(LOTERIASDOMINICANAS_BASE_URL, headers=HEADERS)
                 if resp.status_code == 200:
                     soup = BeautifulSoup(resp.text, 'html.parser')
                     results = []
-                    # Fallback HTML parser for card elements
                     for card in soup.find_all(["div", "article", "a"]):
                         text = card.get_text(" ", strip=True)
                         if any(name in text for name in ["Gana Más", "Quiniela Leidsa", "Lotería Nacional", "Lotería Real"]):
@@ -373,27 +340,27 @@ class LotteryScraper:
                                 results.append(format_lottery_item({
                                     "sorteo_slug": re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-'),
                                     "sorteo_nombre": name,
-                                    "compania": "Conectate",
+                                    "compania": "LoteriasDominicanas",
                                     "fecha": datetime.date.today().isoformat(),
                                     "hora": "",
                                     "numeros": spans,
                                     "extra": {},
-                                    "fuente": "loterias.conectate.com.do/html"
+                                    "fuente": "loteriasdominicanas.com/html"
                                 }))
                                 
                     if results:
                         return {
                             "status": "success",
-                            "source": "loterias.conectate.com.do_html",
+                            "source": "loteriasdominicanas.com_html",
                             "count": len(results),
                             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                             "data": results
                         }
         except Exception as e:
-            print(f"[Scraper Error] Fallback HTML parsing failed: {e}")
+            print(f"[Scraper Warning] Fallback HTML scrape failed: {e}")
 
         return {
             "status": "error",
-            "message": "Failed to retrieve results from loterias.conectate.com.do",
+            "message": "All scraping mechanisms failed for loteriasdominicanas.com",
             "data": []
         }
