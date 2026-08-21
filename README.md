@@ -1,11 +1,11 @@
 # 🇩🇴 API Scraper de Loterías de República Dominicana
 
-API REST desarrollada en **Python + FastAPI** para scraping y consulta en tiempo real de las loterías dominicanas, apuntando a `https://dgiiapicloud.com/api/loterias`. Diseñada y configurada para despliegue automático e instantáneo en **Render** (Plan Gratuito disponible).
+API REST desarrollada en **Python + FastAPI** para scraping y consulta en tiempo real de las loterías dominicanas, apuntando a `https://loterias.conectate.com.do/`. Diseñada y configurada para despliegue automático e instantáneo en **Render** (Plan Gratuito disponible).
 
 ---
 
 ## 🚀 Características
-- **Scraping en tiempo real**: Cobertura de los **23+ sorteos** de las loterías más jugadas en RD (*Lotería Nacional, Leidsa, Loteka, La Primera, Lotería Real, Anguila, King Lottery, New York y Florida*).
+- **Scraping en tiempo real**: Cobertura de los **78+ sorteos** de las loterías más jugadas en RD (*Lotería Nacional, Leidsa, Loteka, La Primera, Lotería Real, Anguila, King Lottery, New York, Florida, Lotedom, La Suerte*).
 - **Fallback Automático**: Scraper secundario por HTML para garantización de alta disponibilidad.
 - **Ready for Render**: Archivos de configuración listos (`render.yaml`, `Procfile`, `Dockerfile`, `requirements.txt`).
 - **Dashboard Visual**: Interfaz web interactiva en la raíz `/` para visualizar los sorteos en tarjetas elegantes con modo oscuro y copiar JSON con un clic.

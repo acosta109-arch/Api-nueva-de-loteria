@@ -13,7 +13,7 @@ import uvicorn
 
 app = FastAPI(
     title="Loterías RD Scraper API",
-    description="API REST en Python para scraping y consulta en tiempo real de los resultados de las loterías de República Dominicana (DGII API Cloud & Loterías RD). Ideal para apps Android / iOS.",
+    description="API REST en Python para scraping y consulta en tiempo real de los resultados de las loterías de República Dominicana desde https://loterias.conectate.com.do/. Ideal para apps Android / iOS.",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -37,7 +37,7 @@ async def health_check():
         "status": "online",
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "service": "Loterias RD Scraper API",
-        "target_source": "https://dgiiapicloud.com/api/loterias"
+        "target_source": "https://loterias.conectate.com.do/"
     }
 
 @app.get("/api/loterias", tags=["Android Direct Endpoints"])
