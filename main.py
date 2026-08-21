@@ -1,7 +1,7 @@
 """
 Dominican Republic Lotteries Scraper API
 Framework: FastAPI
-Ready for Render deployment
+Ready for Render deployment & Android App Integration
 """
 
 from fastapi import FastAPI, Query, HTTPException, Path
@@ -13,7 +13,7 @@ import uvicorn
 
 app = FastAPI(
     title="Loterías RD Scraper API",
-    description="API REST en Python para scraping y consulta en tiempo real de los resultados de las loterías de República Dominicana (DGII API Cloud & Loterías RD).",
+    description="API REST en Python para scraping y consulta en tiempo real de los resultados de las loterías de República Dominicana (DGII API Cloud & Loterías RD). Ideal para apps Android / iOS.",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -40,25 +40,45 @@ async def health_check():
         "target_source": "https://dgiiapicloud.com/api/loterias"
     }
 
+@app.get("/api/loterias", tags=["Android Direct Endpoints"])
+async def get_loterias_direct_json():
+    """
+    [Android Direct Endpoint]
+    Retorna directamente la Lista (Array) JSON de los últimos resultados de las loterías dominicanas.
+    Ideal para mapear en Android con Retrofit / Gson / Kotlin Serialization (`List<LoteriaItem>`).
+    """
+    results = await scraper.get_latest_results()
+    data_list = results.get("data", [])
+    return JSONResponse(content=data_list)
+
 @app.get("/api/latest", tags=["Loterías"])
-async def get_latest_results():
+async def get_latest_results(
+    raw: bool = Query(False, description="Si es True, retorna directamente la lista de elementos en JSON ([...]) sin envoltorio.")
+):
     """
     Obtiene los últimos números ganadores publicados de todas las loterías dominicanas.
     """
     results = await scraper.get_latest_results()
+    if raw:
+        return JSONResponse(content=results.get("data", []))
     return JSONResponse(content=results)
 
 @app.get("/api/sorteos", tags=["Loterías"])
-async def get_sorteos_catalog():
+async def get_sorteos_catalog(
+    raw: bool = Query(False, description="Si es True, retorna directamente la lista de sorteos ([...]).")
+):
     """
     Obtiene el catálogo completo de todos los sorteos dominicanos soportados (23+ sorteos).
     """
     catalog = await scraper.get_sorteos_catalog()
+    if raw:
+        return JSONResponse(content=catalog.get("data", []))
     return JSONResponse(content=catalog)
 
 @app.get("/api/sorteo/{slug}", tags=["Loterías"])
 async def get_sorteo_detail(
-    slug: str = Path(..., description="Slug del sorteo (ej: 'gana-mas', 'loteria-nacional', 'leidsa-loto-mas', 'ny-noche', 'anguila-mananera')")
+    slug: str = Path(..., description="Slug del sorteo (ej: 'gana-mas', 'loteria-nacional', 'leidsa-loto-mas', 'ny-noche', 'anguila-mananera')"),
+    raw: bool = Query(False, description="Si es True, retorna directamente la lista de historial ([...]).")
 ):
     """
     Obtiene el historial de los últimos 30 días de un sorteo en específico por su slug.
@@ -66,30 +86,39 @@ async def get_sorteo_detail(
     detail = await scraper.get_sorteo_detail(slug)
     if detail.get("status") == "error":
         raise HTTPException(status_code=404, detail=detail.get("message"))
+    if raw:
+        return JSONResponse(content=detail.get("data", []))
     return JSONResponse(content=detail)
 
 @app.get("/api/fecha/{date_str}", tags=["Loterías"])
 async def get_results_by_date(
-    date_str: str = Path(..., description="Fecha en formato YYYY-MM-DD (ej: '2026-08-21')")
+    date_str: str = Path(..., description="Fecha en formato YYYY-MM-DD (ej: '2026-08-21')"),
+    raw: bool = Query(False, description="Si es True, retorna directamente la lista de resultados ([...]).")
 ):
     """
     Obtiene todos los resultados correspondientes a una fecha específica.
     """
     results = await scraper.get_results_by_date(date_str)
+    if raw:
+        return JSONResponse(content=results.get("data", []))
     return JSONResponse(content=results)
 
 @app.get("/api/scrape", tags=["Scraper Engine"])
-async def trigger_scrape():
+async def trigger_scrape(
+    raw: bool = Query(False, description="Si es True, retorna directamente la lista ([...]).")
+):
     """
     Ejecuta el scraper en tiempo real contra la fuente oficial y retorna el dataset actualizado.
     """
     results = await scraper.get_latest_results()
+    if raw:
+        return JSONResponse(content=results.get("data", []))
     return JSONResponse(content=results)
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def homepage():
     """
-    Interfaz WebInteractiva de Inicio & Documentación Visual de la API.
+    Interfaz Web Interactiva de Inicio & Documentación Visual de la API.
     """
     html_content = """
     <!DOCTYPE html>
@@ -163,7 +192,7 @@ async def homepage():
                         <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                             Loterías RD <span class="text-xs bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full font-mono">v1.0 Scraper</span>
                         </h1>
-                        <p class="text-xs text-slate-400">Scraping en tiempo real para República Dominicana</p>
+                        <p class="text-xs text-slate-400">Scraping en tiempo real optimizado para Android</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -183,23 +212,23 @@ async def homepage():
             <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/50 to-slate-900 border border-indigo-500/20 p-6 sm:p-8">
                 <div class="relative z-10 max-w-3xl space-y-4">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-mono text-indigo-300 bg-indigo-950/80 border border-indigo-800/50">
-                        <span>Fuente Primaria:</span> <code class="text-white">https://dgiiapicloud.com/api/loterias</code>
+                        <span>Android JSON Endpoint:</span> <code class="text-emerald-400 font-bold">/api/loterias</code>
                     </div>
                     <h2 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
                         Resultados Actualizados de Loterías Dominicanas
                     </h2>
                     <p class="text-sm sm:text-base text-slate-300">
-                        API REST en Python optimizada para deployment continuo en <strong class="text-indigo-400">Render</strong>. Extrae y unifica los sorteos de Lotería Nacional, Leidsa, Loteka, La Primera, Real, Anguila, King Lottery, New York y Florida.
+                        API REST en Python lista para conectar directamente con tu app de <strong class="text-emerald-400">Android (Retrofit/Gson/Kotlin)</strong>. Retorna el JSON directo en formato limpio con campos individuales <code class="text-indigo-300">primero</code>, <code class="text-indigo-300">segundo</code> y <code class="text-indigo-300">tercero</code>.
                     </p>
                     <div class="flex flex-wrap items-center gap-3 pt-2">
                         <button onclick="fetchLatest()" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/25 transition-all flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             Actualizar Resultados Ahora
                         </button>
-                        <button onclick="copyAllJSON()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all flex items-center gap-2">
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                            Copiar Todos (JSON)
-                        </button>
+                        <a href="/api/loterias" target="_blank" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/25 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                            Ver Directo JSON Android (/api/loterias) ↗
+                        </a>
                     </div>
                 </div>
             </div>
@@ -229,43 +258,43 @@ async def homepage():
             <div class="space-y-4 pt-6 border-t border-slate-800">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">
                     <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-                    Endpoints Disponibles de la API
+                    Endpoints JSON para tu App de Android
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 rounded-xl bg-slate-900 border border-emerald-500/30 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded">GET (Direct JSON Array)</span>
+                            <a href="/api/loterias" target="_blank" class="text-xs text-emerald-400 font-bold hover:underline font-mono">/api/loterias ↗</a>
+                        </div>
+                        <p class="text-xs text-white font-bold">Android Direct JSON Array</p>
+                        <p class="text-xs text-slate-400">Retorna directamente la lista JSON <code class="text-emerald-400">[ {...}, {...} ]</code> para mapear con Retrofit / Gson.</p>
+                    </div>
+
                     <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
                         <div class="flex items-center justify-between">
                             <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded">GET</span>
                             <a href="/api/latest" target="_blank" class="text-xs text-indigo-400 hover:underline font-mono">/api/latest ↗</a>
                         </div>
-                        <p class="text-xs text-slate-300 font-semibold">Últimos Resultados</p>
-                        <p class="text-xs text-slate-400">Retorna los números ganadores más recientes de todos los sorteos.</p>
+                        <p class="text-xs text-slate-300 font-semibold">Últimos Resultados (Objeto envuelto)</p>
+                        <p class="text-xs text-slate-400">Retorna el objeto con metadata <code class="text-indigo-300">{"status": "success", "data": [...]}</code>.</p>
                     </div>
 
                     <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
                         <div class="flex items-center justify-between">
                             <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded">GET</span>
-                            <a href="/api/sorteos" target="_blank" class="text-xs text-indigo-400 hover:underline font-mono">/api/sorteos ↗</a>
+                            <a href="/api/sorteo/gana-mas?raw=true" target="_blank" class="text-xs text-indigo-400 hover:underline font-mono">/api/sorteo/{slug}?raw=true ↗</a>
                         </div>
-                        <p class="text-xs text-slate-300 font-semibold">Catálogo de Sorteos</p>
-                        <p class="text-xs text-slate-400">Listado de las 23+ loterías disponibles con horario y compañía.</p>
+                        <p class="text-xs text-slate-300 font-semibold">Historial Directo por Sorteo</p>
+                        <p class="text-xs text-slate-400">Retorna la lista directa de los últimos 30 días de un sorteo (ej: `gana-mas`).</p>
                     </div>
 
                     <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
                         <div class="flex items-center justify-between">
                             <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded">GET</span>
-                            <a href="/api/sorteo/gana-mas" target="_blank" class="text-xs text-indigo-400 hover:underline font-mono">/api/sorteo/{slug} ↗</a>
+                            <a href="/api/sorteos?raw=true" target="_blank" class="text-xs text-indigo-400 hover:underline font-mono">/api/sorteos?raw=true ↗</a>
                         </div>
-                        <p class="text-xs text-slate-300 font-semibold">Historial por Sorteo</p>
-                        <p class="text-xs text-slate-400">Obtiene últimos 30 días de un sorteo específico (ej: `gana-mas`).</p>
-                    </div>
-
-                    <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                        <div class="flex items-center justify-between">
-                            <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded">GET</span>
-                            <a href="/api/scrape" target="_blank" class="text-xs text-indigo-400 hover:underline font-mono">/api/scrape ↗</a>
-                        </div>
-                        <p class="text-xs text-slate-300 font-semibold">Live Scraper</p>
-                        <p class="text-xs text-slate-400">Ejecuta el motor de web scraping directo y entrega JSON limpio.</p>
+                        <p class="text-xs text-slate-300 font-semibold">Catálogo Directo de Sorteos</p>
+                        <p class="text-xs text-slate-400">Lista simple de los 23+ sorteos con nombre, hora y slug.</p>
                     </div>
                 </div>
             </div>
@@ -273,7 +302,7 @@ async def homepage():
 
         <footer class="border-t border-slate-800 bg-slate-950 py-6 mt-12">
             <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 space-y-1">
-                <p>Loterías RD Scraper API • Desarrollado para despliegue en Render</p>
+                <p>Loterías RD Scraper API • Diseñada para integración directa con Android & Render</p>
                 <p class="text-slate-600">Fuente: <a href="https://dgiiapicloud.com/api/loterias" target="_blank" class="hover:underline">https://dgiiapicloud.com/api/loterias</a></p>
             </div>
         </footer>
@@ -289,10 +318,10 @@ async def homepage():
                 </div>`;
                 
                 try {
-                    const res = await fetch('/api/latest');
+                    const res = await fetch('/api/loterias');
                     const json = await res.json();
-                    if (json.data) {
-                        allResults = json.data;
+                    if (Array.isArray(json)) {
+                        allResults = json;
                         renderCards(allResults);
                     }
                 } catch (e) {
@@ -313,7 +342,7 @@ async def homepage():
                     const nums = item.numeros || [];
                     const ballsHtml = nums.map((num, i) => {
                         const bgClass = i === 0 ? 'ball-gradient' : (i === 1 ? 'ball-gradient-2' : 'ball-gradient-3');
-                        const formatted = num < 10 ? '0' + num : num;
+                        const formatted = typeof num === 'number' ? (num < 10 ? '0' + num : num) : num;
                         return `<div class="w-12 h-12 rounded-full ${bgClass} flex items-center justify-center text-white font-extrabold text-lg tracking-wider">${formatted}</div>`;
                     }).join('');
 
@@ -334,7 +363,22 @@ async def homepage():
                                 ${ballsHtml || '<span class="text-xs text-slate-500">Sin números</span>'}
                             </div>
 
-                            <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
+                            <div class="grid grid-cols-3 gap-2 text-center text-xs bg-slate-950/60 p-2 rounded-xl border border-slate-800/60">
+                                <div>
+                                    <span class="text-[10px] text-slate-500 block uppercase">1ro</span>
+                                    <strong class="text-sky-400 font-mono text-sm">${item.primero || '--'}</strong>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-slate-500 block uppercase">2do</span>
+                                    <strong class="text-pink-400 font-mono text-sm">${item.segundo || '--'}</strong>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-slate-500 block uppercase">3ro</span>
+                                    <strong class="text-amber-400 font-mono text-sm">${item.tercero || '--'}</strong>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between pt-1 text-xs">
                                 <span class="text-slate-500 font-mono text-[11px]">slug: ${item.sorteo_slug}</span>
                                 <button onclick='copyJSON(${JSON.stringify(JSON.stringify(item))})' class="text-slate-400 hover:text-indigo-400 transition-colors flex items-center gap-1">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -355,11 +399,6 @@ async def homepage():
             function copyJSON(jsonStr) {
                 navigator.clipboard.writeText(jsonStr);
                 alert("JSON copiado al portapapeles");
-            }
-
-            function copyAllJSON() {
-                navigator.clipboard.writeText(JSON.stringify(allResults, null, 2));
-                alert("Todos los resultados en JSON han sido copiados al portapapeles");
             }
 
             // Initial fetch

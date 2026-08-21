@@ -18,6 +18,39 @@ HEADERS = {
     "Referer": "https://dgiiapicloud.com/api/loterias"
 }
 
+def format_lottery_item(item: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Format a lottery result item to be easily consumable by Android apps (Retrofit/Gson/Moshi/Kotlin).
+    """
+    nums = item.get("numeros", [])
+    
+    def fmt_num(val):
+        if val is None:
+            return ""
+        if isinstance(val, int):
+            return f"{val:02d}"
+        s = str(val).strip()
+        return s.zfill(2) if s.isdigit() and len(s) < 2 else s
+
+    primero = fmt_num(nums[0]) if len(nums) > 0 else ""
+    segundo = fmt_num(nums[1]) if len(nums) > 1 else ""
+    tercero = fmt_num(nums[2]) if len(nums) > 2 else ""
+
+    return {
+        "id": item.get("id"),
+        "sorteo_slug": item.get("sorteo_slug", ""),
+        "sorteo_nombre": item.get("sorteo_nombre", ""),
+        "compania": item.get("compania", ""),
+        "fecha": item.get("fecha", ""),
+        "hora": item.get("hora", ""),
+        "numeros": nums,
+        "primero": primero,
+        "segundo": segundo,
+        "tercero": tercero,
+        "extra": item.get("extra", {}),
+        "fuente": item.get("fuente", "dgiiapicloud")
+    }
+
 class LotteryScraper:
     def __init__(self, timeout: float = 10.0):
         self.timeout = timeout
@@ -28,23 +61,22 @@ class LotteryScraper:
         """
         try:
             async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-                # Primary attempt: Supabase endpoint powering dgiiapicloud.com
                 url = f"{DGII_API_ENDPOINT}/latest"
                 resp = await client.get(url, headers=HEADERS)
                 if resp.status_code == 200:
                     data = resp.json()
                     if data.get("ok") and "resultados" in data:
+                        formatted_list = [format_lottery_item(it) for it in data["resultados"]]
                         return {
                             "status": "success",
                             "source": "dgiiapicloud.com",
-                            "count": len(data["resultados"]),
+                            "count": len(formatted_list),
                             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                            "data": data["resultados"]
+                            "data": formatted_list
                         }
         except Exception as e:
             print(f"[Scraper Warning] Primary fetch failed: {e}")
 
-        # Fallback to direct HTML scrape of loteriasdominicanas
         return await self._scrape_fallback_latest()
 
     async def get_sorteos_catalog(self) -> Dict[str, Any]:
@@ -68,7 +100,6 @@ class LotteryScraper:
         except Exception as e:
             print(f"[Scraper Warning] Sorteos catalog fetch failed: {e}")
 
-        # Fallback catalog
         default_sorteos = [
             {"sorteo_slug": "gana-mas", "sorteo_nombre": "Gana Más", "compania": "Lotería Nacional", "hora": "14:30"},
             {"sorteo_slug": "loteria-nacional", "sorteo_nombre": "Lotería Nacional Noche", "compania": "Lotería Nacional", "hora": "21:00"},
@@ -103,12 +134,13 @@ class LotteryScraper:
                 if resp.status_code == 200:
                     data = resp.json()
                     if data.get("ok"):
+                        formatted_list = [format_lottery_item(it) for it in data.get("historico", [])]
                         return {
                             "status": "success",
                             "source": "dgiiapicloud.com",
                             "slug": slug,
-                            "count": len(data.get("historico", [])),
-                            "data": data.get("historico", [])
+                            "count": len(formatted_list),
+                            "data": formatted_list
                         }
         except Exception as e:
             print(f"[Scraper Warning] Sorteo detail fetch failed for '{slug}': {e}")
@@ -131,12 +163,13 @@ class LotteryScraper:
                 if resp.status_code == 200:
                     data = resp.json()
                     if data.get("ok"):
+                        formatted_list = [format_lottery_item(it) for it in data.get("resultados", [])]
                         return {
                             "status": "success",
                             "source": "dgiiapicloud.com",
                             "fecha": date_str,
-                            "count": len(data.get("resultados", [])),
-                            "data": data.get("resultados", [])
+                            "count": len(formatted_list),
+                            "data": formatted_list
                         }
         except Exception as e:
             print(f"[Scraper Warning] Fetch by date failed for '{date_str}': {e}")
@@ -157,7 +190,6 @@ class LotteryScraper:
                 if resp.status_code == 200:
                     soup = BeautifulSoup(resp.text, 'html.parser')
                     results = []
-                    # Parse lottery cards from HTML
                     cards = soup.select('.game-block, .lottery-block, div.block-game')
                     for card in cards:
                         title_el = card.select_one('.game-title, .title, h3, h4')
@@ -170,7 +202,7 @@ class LotteryScraper:
                                 if text.isdigit():
                                     nums.append(int(text))
                             if nums:
-                                results.append({
+                                results.append(format_lottery_item({
                                     "sorteo_slug": re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-'),
                                     "sorteo_nombre": name,
                                     "compania": "Desconocida",
@@ -179,7 +211,7 @@ class LotteryScraper:
                                     "numeros": nums,
                                     "extra": {},
                                     "fuente": "html_scraper"
-                                })
+                                }))
                     if results:
                         return {
                             "status": "success",
